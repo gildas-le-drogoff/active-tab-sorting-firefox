@@ -1,37 +1,34 @@
 "use strict";
 
+const MOVE_DELAY = 400;
+
 let timeoutID = 0;
-let dragging = false;
-
-browser.tabs.onMoved.addListener(() => {
-  dragging = true;
-});
-
-browser.tabs.onDetached.addListener(() => {
-  dragging = true;
-});
 
 browser.tabs.onActivated.addListener(({ tabId }) => {
-  dragging = false;
   clearTimeout(timeoutID);
   timeoutID = setTimeout(async () => {
-    if (dragging) return;
-
     try {
       const tab = await browser.tabs.get(tabId);
       if (tab.pinned) return;
+      if (!tab.active) return;
+
+      const initialIndex = tab.index;
+      await new Promise((r) => setTimeout(r, 150));
+
+      const fresh = await browser.tabs.get(tabId);
+      if (fresh.index !== initialIndex) return;
 
       const pinnedTabs = await browser.tabs.query({
         pinned: true,
-        windowId: tab.windowId,
+        windowId: fresh.windowId,
       });
 
       const targetIndex = pinnedTabs.length;
-      if (tab.index > targetIndex) {
+      if (fresh.index > targetIndex) {
         await browser.tabs.move(tabId, { index: targetIndex });
       }
     } catch (error) {
       console.log("Tab move failed:", error);
     }
-  }, 100);
+  }, MOVE_DELAY);
 });

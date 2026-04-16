@@ -18,6 +18,7 @@ images/icon-%.png: $(SVG)
 zip: $(NAME).zip
 
 $(NAME).zip: $(SOURCES)
+	rm -v *.zip
 	rm -f $@
 	zip -r $@ $^
 
